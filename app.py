@@ -1,7 +1,11 @@
 from flask import Flask, request, jsonify
 from client import Client
+from ticket import Ticket
+import uuid
 
 app = Flask(__name__)
+
+# client methods
 
 client_list = []
 client_id = 1
@@ -77,6 +81,53 @@ def delete_client(id):
     return jsonify (
         {"message": "client deleted"}
         ) , 200
+
+# ticket methods
+
+tickets_list = []
+
+@app.route("/ticket", methods=['POST'])
+def create_ticket():
+    ticket_data = request.get_json()
+    new_ticket = Ticket(ticket_id= str(uuid.uuid4()),
+                        client_id= ticket_data["client_id"],
+                        title= ticket_data["title"],
+                        description= ticket_data["description"],
+                        category= ticket_data["category"],
+                        urgency= ticket_data["urgency"],
+                        priority= ticket_data["priority"],
+                        status= ticket_data["status"])
+
+    tickets_list.append(new_ticket.to_dict())
+
+    print(tickets_list)
+
+    return jsonify(
+        {"message":"ticket created",
+         "created_ticket": ticket_data}
+        ), 200
+
+@app.route("/tickets", methods=['GET'])
+def get_tickets():
+    return jsonify({
+        "created_tickets": len(tickets_list),
+        "tickets_list": tickets_list
+    }), 200
+
+
+@app.route("/ticket/<ticket_id>", methods=['GET'])
+def get_ticket(ticket_id):
+    for ticket in tickets_list:
+        if ticket["ticket_id"] == ticket_id:
+            return jsonify(
+                {
+                    "message": "ticket found",
+                    "ticket": ticket
+                }
+            ), 200
+
+    return jsonify({"message": "ticket not found"}), 404
+
 
 
 if __name__ == "__main__":
